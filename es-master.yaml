@@ -47,7 +47,7 @@ spec:
         - name: HTTP_ENABLE
           value: "false"
         - name: ES_JAVA_OPTS
-          value: -Xms256m -Xmx256m
+          value: -Xms512m -Xmx512m
         - name: PROCESSORS
           valueFrom:
             resourceFieldRef:
@@ -55,15 +55,17 @@ spec:
         resources:
           requests:
             cpu: 0.25
+            memory: 500Mi
           limits:
             cpu: 1
+            memory: 750Mi
         ports:
         - containerPort: 9300
           name: transport
         livenessProbe:
           tcpSocket:
             port: transport
-          initialDelaySeconds: 20
+          initialDelaySeconds: 60
           periodSeconds: 10
         volumeMounts:
         - name: storage

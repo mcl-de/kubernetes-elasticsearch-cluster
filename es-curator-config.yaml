@@ -13,6 +13,37 @@ data:
     # copying it.
     actions:
       1:
+        action: reindex
+        description: "Reindex daily traefik logs"
+        options:
+          wait_interval: 9
+          max_wait: -1
+          request_body:
+            source:
+              index: <logstash-{now/d-1d}>
+              query:
+                bool:
+                  must:
+                  - term:
+                      kubernetes.labels.name.keyword: traefik-ingress-lb
+                  - term:
+                      stream: stdout
+            dest:
+              index: <filebeat-6.2.2-traefik-{now/d-1d}>
+              type: doc
+              pipeline: filebeat-6.2.2-traefik-access-pipeline
+            script:
+              source: |-
+                ctx._source.message = ctx._source.remove("log");
+                ctx._source.remove("kubernetes");
+                ctx._source.remove("stream");
+                ctx._source.remove("tag");
+                ctx._source.remove("docker");
+                ctx._source.beat = ['name':ctx._source._type,'version':'6.2.2'];
+                ctx._source.fileset = ['module':'traefik','name':'access'];
+                ctx._source.prospector = ['type':'log'];
+                ctx._source.source = ctx._source._id;
+      2:
         action: delete_indices
         description: "Clean up ES by deleting old indices"
         options:
@@ -26,7 +57,7 @@ data:
           direction: older
           timestring: '%Y.%m.%d'
           unit: days
-          unit_count: 3
+          unit_count: 90
           field:
           stats_result:
           epoch:
